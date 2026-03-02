@@ -1,0 +1,320 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ClaimGuard Workspace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/web/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-block">
+          <div class="brand-icon">CG</div>
+          <div>
+            <p class="brand-title">ClaimGuard</p>
+            <p class="brand-subtitle">Fraud Intelligence</p>
+          </div>
+        </div>
+
+        <nav class="side-nav" aria-label="Main navigation">
+          <a class="nav-item active" href="#">Overview</a>
+          <a class="nav-item" href="#">Claim Intake</a>
+          <a class="nav-item" href="#">Risk Review</a>
+          <a class="nav-item" href="#">Policy Insights</a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <p>Model Status</p>
+          <span class="status-chip">Live</span>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="kicker">Executive Dashboard</p>
+            <h1>Claims Adjudication Console</h1>
+            <p id="active-company-label" class="active-company-label">Insurer View: All Companies</p>
+          </div>
+
+          <div class="topbar-actions">
+            <label class="search-wrap" aria-label="Search">
+              <span>Search claims, policy IDs, provider names...</span>
+            </label>
+            <div class="user-pill">
+              <div class="avatar">RM</div>
+              <div>
+                <p class="user-name">Risk Manager</p>
+                <p class="user-role">Claims Operations</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section id="company-chip-strip" class="company-chip-strip hidden" aria-label="Insurers in uploaded dataset"></section>
+
+        <section class="kpi-grid" aria-label="Portfolio summary">
+          <article class="kpi-card">
+            <p class="kpi-label">Claims Under Review</p>
+            <p class="kpi-value">1,284</p>
+            <p class="kpi-trend up">+12% from last month</p>
+          </article>
+          <article class="kpi-card">
+            <p class="kpi-label">Pending Decisions</p>
+            <p class="kpi-value">85</p>
+            <p class="kpi-trend down">-5% from last week</p>
+          </article>
+          <article class="kpi-card">
+            <p class="kpi-label">Avg. Approval Time</p>
+            <p class="kpi-value">4.2 <span>days</span></p>
+            <p class="kpi-trend flat">Stable this cycle</p>
+          </article>
+          <article class="kpi-card">
+            <p class="kpi-label">Portfolio Risk Score</p>
+            <p class="kpi-value">Low</p>
+            <div class="risk-meter" aria-hidden="true">
+              <span></span>
+            </div>
+          </article>
+        </section>
+
+        <section class="work-grid">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>Manual Claim Entry</h2>
+              <p>Enter UID, fetch patient details, then provide only previous claims and disease.</p>
+            </div>
+
+            <form id="manual-form" class="form-grid">
+              <div class="uid-row">
+                <label>
+                  Patient UID
+                  <input type="text" id="uid" placeholder="e.g. ACK210001" required />
+                </label>
+                <button id="uid-fetch-btn" type="button">Fetch by UID</button>
+              </div>
+
+              <div class="uid-row">
+                <label>
+                  Hospital ID
+                  <input type="text" id="hosp_id" placeholder="e.g. HOSP001" required />
+                </label>
+                <button id="hospital-fetch-btn" type="button">Fetch Hospital</button>
+              </div>
+
+              <label>
+                Hospital Name
+                <input type="text" id="hospital_name" readonly />
+              </label>
+              <label>
+                Hospital City
+                <input type="text" id="hospital_city" readonly />
+              </label>
+              <label>
+                Hospital Specialty
+                <input type="text" id="hospital_specialty" readonly />
+              </label>
+
+              <label>
+                Claim Amount
+                <input type="number" id="claim_amount" min="0" step="0.01" required readonly />
+              </label>
+              <label>
+                Patient Age
+                <input type="number" id="patient_age" min="0" max="120" step="1" required readonly />
+              </label>
+              <label>
+                Policy Type
+                <select id="policy_type" required disabled>
+                  <option value="">Select policy type</option>
+                </select>
+              </label>
+              <label>
+                Disease
+                <select id="disease_name" required>
+                  <option value="">Select disease</option>
+                </select>
+              </label>
+              <label>
+                Policy Tenure (months)
+                <input type="number" id="policy_tenure_months" min="0" step="1" required readonly />
+              </label>
+              <label>
+                Previous Claims Count
+                <input type="number" id="previous_claims_count" min="0" step="1" required />
+              </label>
+              <label>
+                Hospital Trust Score (0 to 1)
+                <input type="number" id="hospital_trust_score" min="0" max="1" step="0.01" required readonly />
+              </label>
+              <label>
+                Days Since Policy Start
+                <input type="number" id="days_since_policy_start" min="0" step="1" required readonly />
+              </label>
+              <button id="manual-submit" type="submit">Evaluate Claim</button>
+            </form>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h2>Medical Rule Factors</h2>
+              <p>Evaluation includes policy authorization and age susceptibility for selected disease.</p>
+            </div>
+
+            <div class="helper-box">
+              <h3>Evaluation Flow</h3>
+              <ol>
+                <li>Upload portfolio CSV first so UID registry is loaded.</li>
+                <li>Upload hospital XLSX first so hospital registry is loaded.</li>
+                <li>Enter UID and click <strong>Fetch by UID</strong>.</li>
+                <li>Enter Hospital ID and click <strong>Fetch Hospital</strong>.</li>
+                <li>Set <strong>Previous Claims Count</strong> and <strong>Disease</strong>.</li>
+                <li>Run evaluation to combine ML score + medical checks.</li>
+              </ol>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel portfolio-panel">
+          <div class="panel-head">
+            <h2>Insurance Portfolio Analyzer</h2>
+            <p>Upload member/policy CSV files to generate risk insights, disease patterns, and high-risk profile rankings.</p>
+          </div>
+
+          <form id="portfolio-form" class="portfolio-upload-row">
+            <label>
+              Portfolio CSV
+              <input type="file" id="portfolio_file" accept=".csv,text/csv" required />
+            </label>
+            <button id="portfolio-submit" type="submit">Analyze Portfolio CSV</button>
+          </form>
+
+          <form id="hospital-form" class="portfolio-upload-row">
+            <label>
+              Hospital XLSX
+              <input
+                type="file"
+                id="hospital_file"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                required
+              />
+            </label>
+            <button id="hospital-submit" type="submit">Load Hospital XLSX</button>
+          </form>
+
+          <div id="portfolio-analysis" class="analysis-grid hidden">
+            <div class="analysis-card">
+              <p class="analysis-label">Records</p>
+              <p id="analysis-record-count" class="analysis-value">-</p>
+            </div>
+            <div class="analysis-card">
+              <p class="analysis-label">Average Age</p>
+              <p id="analysis-avg-age" class="analysis-value">-</p>
+            </div>
+            <div class="analysis-card">
+              <p class="analysis-label">Average Premium</p>
+              <p id="analysis-avg-premium" class="analysis-value">-</p>
+            </div>
+            <div class="analysis-card">
+              <p class="analysis-label">Total Coverage</p>
+              <p id="analysis-total-coverage" class="analysis-value">-</p>
+            </div>
+          </div>
+
+          <div id="analysis-details" class="analysis-details hidden">
+            <div class="analysis-split">
+              <div class="mini-panel">
+                <h3>Policy Mix</h3>
+                <ul id="policy-mix-list" class="stat-list"></ul>
+              </div>
+              <div class="mini-panel">
+                <h3>Top Diseases</h3>
+                <ul id="disease-list" class="stat-list"></ul>
+              </div>
+            </div>
+
+            <div class="mini-panel">
+              <h3>Top Risk Profiles</h3>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>UID</th>
+                      <th>Name</th>
+                      <th>Company</th>
+                      <th>Policy</th>
+                      <th>Risk</th>
+                      <th>Score</th>
+                      <th>Drivers</th>
+                    </tr>
+                  </thead>
+                  <tbody id="risk-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="mini-panel">
+              <h3>Insights</h3>
+              <ul id="insights-list" class="stat-list"></ul>
+            </div>
+          </div>
+        </section>
+
+        <section id="result-card" class="panel result-panel hidden" aria-live="polite">
+          <div class="result-head">
+            <h2>Decision Summary</h2>
+            <span id="source-pill" class="pill">-</span>
+          </div>
+
+          <div class="result-grid">
+            <div class="result-tile">
+              <p class="label">Base Fraud Probability</p>
+              <p id="base-probability-value" class="value">-</p>
+            </div>
+            <div class="result-tile">
+              <p class="label">Fraud Probability</p>
+              <p id="probability-value" class="value">-</p>
+            </div>
+            <div class="result-tile">
+              <p class="label">Risk Label</p>
+              <p id="risk-value" class="value">-</p>
+            </div>
+            <div class="result-tile">
+              <p class="label">Disease Authorization</p>
+              <p id="disease-auth-value" class="value">-</p>
+            </div>
+            <div class="result-tile">
+              <p class="label">Age Susceptibility</p>
+              <p id="age-susceptibility-value" class="value">-</p>
+            </div>
+            <div class="result-tile">
+              <p class="label">Claim Decision</p>
+              <p id="decision-value" class="value">-</p>
+            </div>
+          </div>
+
+          <div class="parsed-features">
+            <p class="label">Medical Notes</p>
+            <div id="medical-notes-view" class="notes-view">-</div>
+          </div>
+
+          <div class="parsed-features">
+            <p class="label">Parsed Features</p>
+            <div id="features-view" class="features-view">-</div>
+          </div>
+        </section>
+
+        <section id="status" class="status-bar" aria-live="polite">Ready.</section>
+      </main>
+    </div>
+
+    <script src="/web/app.js"></script>
+  </body>
+</html>
