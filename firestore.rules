@@ -1,0 +1,97 @@
+// Firestore Security Rules for ClaimGrid Insurance Platform
+// Development Mode - Allows read/write access for testing
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================
+    // CLAIMS COLLECTION
+    // ===============================================
+    match /claims/{claimId} {
+      // Allow all read operations (for development)
+      allow read: if true;
+      
+      // Allow all write operations (create, update, delete)
+      allow write: if true;
+    }
+    
+    // ===============================================
+    // FUTURE: Add more collections here
+    // ===============================================
+    // match /hospitals/{hospitalId} {
+    //   allow read, write: if true;
+    // }
+    
+    // match /providers/{providerId} {
+    //   allow read, write: if true;
+    // }
+    
+    // match /patients/{patientId} {
+    //   allow read, write: if true;
+    // }
+  }
+}
+
+// ===============================================
+// PRODUCTION SECURITY RULES (RECOMMENDED)
+// ===============================================
+// Uncomment and customize these rules for production:
+//
+// rules_version = '2';
+// service cloud.firestore {
+//   match /databases/{database}/documents {
+//     
+//     // Helper function to check if user is authenticated
+//     function isAuthenticated() {
+//       return request.auth != null;
+//     }
+//     
+//     // Helper function to check user role
+//     function hasRole(role) {
+//       return isAuthenticated() && 
+//              request.auth.token.role == role;
+//     }
+//     
+//     // Claims Collection
+//     match /claims/{claimId} {
+//       // Hospitals can create and read their own claims
+//       allow create: if hasRole('hospital');
+//       
+//       // Providers can read and update any claim
+//       allow read, update: if hasRole('provider');
+//       
+//       // Hospitals can read their own claims only
+//       allow read: if hasRole('hospital') && 
+//                     resource.data.hospitalId == request.auth.uid;
+//       
+//       // Prevent deletion of claims
+//       allow delete: if false;
+//     }
+//     
+//     // Hospitals Collection
+//     match /hospitals/{hospitalId} {
+//       allow read: if isAuthenticated();
+//       allow write: if hasRole('admin');
+//     }
+//     
+//     // Providers Collection
+//     match /providers/{providerId} {
+//       allow read: if isAuthenticated();
+//       allow write: if hasRole('admin');
+//     }
+//     
+//     // Patients Collection
+//     match /patients/{patientId} {
+//       // Patients can read their own data
+//       allow read: if isAuthenticated() && 
+//                     request.auth.uid == patientId;
+//       
+//       // Hospitals and providers can read patient data
+//       allow read: if hasRole('hospital') || hasRole('provider');
+//       
+//       // Only admins can write patient data
+//       allow write: if hasRole('admin');
+//     }
+//   }
+// }

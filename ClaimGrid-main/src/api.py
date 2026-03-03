@@ -50,6 +50,9 @@ app = FastAPI(title="Fraud Detection API", version="1.8.0")
 if WEB_DIR.exists():
     app.mount("/web", StaticFiles(directory=str(WEB_DIR)), name="web")
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
 _service: Optional[FraudScoringService] = None
 _patient_registry: dict[str, dict] = {}
 _hospital_registry: dict[str, dict] = {}
@@ -138,16 +141,31 @@ def _require_medical_context(payload: PredictRequest) -> tuple[int, str, str]:
 @app.on_event("startup")
 def startup_event():
     global _service, _patient_registry, _hospital_registry, _hospital_registry_source
-    _service = FraudScoringService.from_joblib(resolve_model_path())
+    try:
+        logging.info("Loading fraud detection model...")
+        _service = FraudScoringService.from_joblib(resolve_model_path())
+        logging.info("Model loaded successfully.")
+    except Exception as e:
+        logging.error(f"Failed to load fraud detection model: {e}")
+        raise HTTPException(status_code=500, detail="Failed to load fraud detection model.")
 
     registry_path = resolve_registry_path()
     try:
+        logging.info(f"Loading patient registry from {registry_path}...")
         _patient_registry = _load_patient_registry_from_disk(registry_path)
+        logging.info("Patient registry loaded successfully.")
     except Exception as exc:
         _patient_registry = {}
-        logger.warning("Failed to load patient registry from %s: %s", registry_path, exc)
+        logging.warning(f"Failed to load patient registry from {registry_path}: {exc}")
 
-    _hospital_registry, _hospital_registry_source = _load_first_available_hospital_registry()
+    try:
+        logging.info("Loading hospital registry...")
+        _hospital_registry, _hospital_registry_source = _load_first_available_hospital_registry()
+        logging.info("Hospital registry loaded successfully.")
+    except Exception as exc:
+        _hospital_registry = {}
+        _hospital_registry_source = None
+        logging.warning(f"Failed to load hospital registry: {exc}")
 
 
 @app.get("/", include_in_schema=False)
@@ -246,40 +264,45 @@ def hospital_profile(hosp_id: str):
 
 @app.post("/predict", response_model=PredictResponse)
 def predict(payload: PredictRequest):
-    if _service is None:
-        raise HTTPException(status_code=500, detail="Model is not loaded")
-
-    patient_age, policy_type, disease_name = _require_medical_context(payload)
-
-    payload_dict = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
-    model_features = {key: payload_dict[key] for key in FEATURE_FIELDS}
-
-    base_probability, _ = _service.predict(model_features)
+    global _service
     try:
+        logging.info("Received prediction request.")
+        patient_age, policy_type, disease_name = _require_medical_context(payload)
+        
+        # Build feature dictionary
+        features = {field: getattr(payload, field) for field in FEATURE_FIELDS}
+        
+        # Get base prediction (returns tuple of probability and risk_label)
+        base_probability, _ = _service.predict(features)
+        
+        # Apply medical context
         medical_result = apply_medical_context(
             base_probability=base_probability,
             policy_type=policy_type,
             disease_name=disease_name,
             patient_age=patient_age,
         )
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-    final_probability = float(medical_result["adjusted_fraud_probability"])
-    risk_label = _risk_from_probability(final_probability)
-
-    return PredictResponse(
-        base_fraud_probability=float(medical_result["base_fraud_probability"]),
-        fraud_probability=final_probability,
-        risk_label=risk_label,
-        policy_type=str(medical_result["policy_type"]),
-        disease_name=str(medical_result["disease_name"]),
-        patient_age=int(medical_result["patient_age"]),
-        disease_authorization_status=str(medical_result["disease_authorization_status"]),
-        age_susceptibility_status=str(medical_result["age_susceptibility_status"]),
-        medical_adjustment=float(medical_result["medical_adjustment"]),
-        medical_notes=list(medical_result["medical_notes"]),
-    )
+        
+        # Determine final risk label from adjusted probability
+        adjusted_probability = medical_result["adjusted_fraud_probability"]
+        risk_label = _risk_from_probability(adjusted_probability)
+        
+        logging.info("Prediction successful.")
+        return PredictResponse(
+            base_fraud_probability=medical_result["base_fraud_probability"],
+            fraud_probability=adjusted_probability,
+            risk_label=risk_label,
+            policy_type=medical_result["policy_type"],
+            disease_name=medical_result["disease_name"],
+            patient_age=medical_result["patient_age"],
+            disease_authorization_status=medical_result["disease_authorization_status"],
+            age_susceptibility_status=medical_result["age_susceptibility_status"],
+            medical_adjustment=medical_result["medical_adjustment"],
+            medical_notes=medical_result["medical_notes"],
+        )
+    except Exception as e:
+        logging.error(f"Prediction failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {e}")
 
 
 @app.post("/analyze-portfolio-csv", response_model=PortfolioAnalysisResponse)

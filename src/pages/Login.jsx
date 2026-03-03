@@ -3,17 +3,21 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 
+const GOOGLE_CLIENT_ID = '404398181144-m0kdl7f0t58muk4mogr2v3p3f0h03rnp.apps.googleusercontent.com';
+
 function Login() {
   const { role } = useParams();
   const navigate = useNavigate();
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
+      console.log('Sending Google token to backend...');
       const res = await axios.post("http://localhost:8000/auth/google", {
         token: credentialResponse.credential,
         role: role
       });
 
+      console.log('Backend response:', res.data);
       const userData = res.data.user;
       localStorage.setItem("user", JSON.stringify(userData));
 
@@ -27,7 +31,11 @@ function Login() {
       }
     } catch (error) {
       console.error('Google login failed:', error);
-      alert('Login failed. Please try again.');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      const errorMessage = error.response?.data?.error || error.message || 'Unknown error';
+      alert(`Login failed: ${errorMessage}\n\nPlease check the browser console (F12) for details.`);
     }
   };
 
@@ -43,6 +51,12 @@ function Login() {
       role: role,
       isGuest: false,
     };
+
+    // Add hospitalId for hospital users
+    if (role === "hospital") {
+      loggedInUser.hospitalId = "HOSP-" + Date.now();
+      loggedInUser.hospitalName = email.split('@')[0] + " Hospital";
+    }
 
     localStorage.setItem("user", JSON.stringify(loggedInUser));
 
@@ -99,6 +113,12 @@ function Login() {
                 isGuest: true,
               };
 
+              // Add hospitalId for hospital users
+              if (role === "hospital") {
+                guestUser.hospitalId = "HOSP-GUEST-001";
+                guestUser.hospitalName = "City General Hospital";
+              }
+
               localStorage.setItem("user", JSON.stringify(guestUser));
 
               if (role === "hospital") {
@@ -132,9 +152,6 @@ function Login() {
                 console.log('Login Failed');
                 alert('Google Login Failed. Please try again.');
               }}
-              theme="outline"
-              size="large"
-              width="100%"
             />
           </div>
         </form>

@@ -53,7 +53,7 @@ function Landing() {
               <div className="text-sm text-gray-400 mt-2">Always available when you need us</div>
             </div>
             <div className="transform hover:scale-105 transition-transform duration-300">
-              <div className="text-6xl font-extrabold mb-3 bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent">&lt; 2 min</div>
+              <div className="text-6xl font-extrabold mb-3 bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent">2 Hour</div>
               <div className="text-xl font-semibold text-gray-300">Claim Processing</div>
               <div className="text-sm text-gray-400 mt-2">Lightning-fast approvals</div>
             </div>

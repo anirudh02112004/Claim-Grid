@@ -1,79 +1,55 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import RiskAnalytics from "./RiskAnalytics";
+import KpiCard from "../components/KpiCard";
+import {
+  subscribeToRealTimeClaims,
+  approveClaim,
+  rejectClaim,
+  markClaimUnderReview,
+} from "../services/claimService";
 
-const API_BASE = "http://localhost:8000";
-
-// Sidebar Component
-function Sidebar() {
+// ================= SIDEBAR =================
+function Sidebar({ activeSection, setActiveSection }) {
   const navigate = useNavigate();
 
   const handleSignOut = () => {
-    localStorage.removeItem('user');
-    navigate('/login/provider');
+    localStorage.removeItem("user");
+    navigate("/login/provider");
   };
 
+  const menuItem = (id, label) => (
+    <button
+      onClick={() => setActiveSection(id)}
+      className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${
+        activeSection === id
+          ? "bg-blue-50 text-blue-600"
+          : "text-gray-700 hover:bg-gray-50"
+      }`}
+    >
+      {label}
+    </button>
+  );
+
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 flex flex-col">
-      {/* Logo Section */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">ClaimGrid</h1>
-            <p className="text-xs text-gray-500">Enterprise Insurance</p>
-          </div>
-        </div>
+    <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r flex flex-col">
+      <div className="p-6 border-b">
+        <h1 className="text-lg font-bold">ClaimGrid</h1>
+        <p className="text-xs text-gray-500">Enterprise Insurance</p>
       </div>
 
-      {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-1">
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-50 text-blue-600 font-medium transition">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-          Overview
-        </button>
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-          </svg>
-          Claim Queue
-        </button>
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
-          Policy Management
-        </button>
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          Risk Analytics
-        </button>
+      <nav className="flex-1 p-4 space-y-2">
+        {menuItem("overview", "Overview")}
+        {menuItem("claim-queue", "Claim Queue")}
+        {menuItem("policy-management", "Policy Management")}
+        {menuItem("risk-analytics", "Risk Analytics")}
       </nav>
 
-      {/* Bottom Menu */}
-      <div className="p-4 border-t border-gray-200 space-y-1">
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          Settings
-        </button>
-        <button 
+      <div className="p-4 border-t">
+        <button
           onClick={handleSignOut}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+          className="w-full px-4 py-2 bg-gray-100 rounded hover:bg-gray-200"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
           Sign Out
         </button>
       </div>
@@ -81,501 +57,593 @@ function Sidebar() {
   );
 }
 
-// Header Component
+// ================= HEADER =================
 function DashboardHeader() {
-  // Get user info from localStorage
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const displayName = user.isGuest ? 'Guest' : user.email || user.name || 'Robert Sterling';
-  const displayRole = user.isGuest ? 'Guest User' : 'Senior Claims Adjudicator';
-
   return (
-    <header className="bg-white border-b border-gray-200 px-8 py-4">
-      <div className="flex items-center justify-between">
-        {/* Title */}
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Executive</h2>
-          <h2 className="text-xl font-bold text-gray-900">Dashboard</h2>
-        </div>
-
-        {/* Right Section */}
-        <div className="flex items-center gap-4">
-          {/* Search Bar */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search claims, policies, or providers..."
-              className="w-72 px-4 py-2 pl-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </div>
-
-          {/* Notification Icon */}
-          <button className="relative p-2 text-gray-500 hover:text-gray-700 transition">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-              />
-            </svg>
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full"></span>
-          </button>
-
-          {/* Message Icon */}
-          <button className="relative p-2 text-gray-500 hover:text-gray-700 transition">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-              />
-            </svg>
-          </button>
-
-          {/* Profile Section */}
-          <div className="flex items-center gap-3 ml-2">
-            <div className="text-right">
-              <p className="text-xs text-gray-500 uppercase tracking-wide">{displayRole}</p>
-              <p className="text-sm font-semibold text-gray-900">{displayName}</p>
-            </div>
-            <img 
-              src="https://i.pravatar.cc/150?img=12" 
-              alt="Profile" 
-              className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
-            />
-          </div>
-        </div>
-      </div>
+    <header className="bg-white border-b px-8 py-4">
+      <h2 className="text-xl font-bold">Executive Dashboard</h2>
     </header>
   );
 }
 
-// Stats Card Component
-function StatsCard({ title, value, trend, icon, iconBg }) {
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <h3 className="text-sm font-medium text-gray-600">{title}</h3>
-        <div className={`w-10 h-10 ${iconBg} rounded-lg flex items-center justify-center`}>
-          {icon}
-        </div>
-      </div>
-      <p className="text-3xl font-bold text-gray-900 mb-2">{value}</p>
-      {trend && (
-        <p className={`text-sm flex items-center gap-1 ${
-          trend.startsWith('+') ? 'text-green-600' : 
-          trend.startsWith('-') && trend.includes('improvement') ? 'text-green-600' : 
-          'text-red-600'
-        }`}>
-          {trend.startsWith('+') || trend.includes('improvement') ? (
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-          )}
-          {trend}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// Risk Score Card Component
-function RiskScoreCard({ riskScore }) {
-  const getHealthyStatus = () => {
-    if (riskScore === "LOW") return "HEALTHY";
-    if (riskScore === "MEDIUM") return "MODERATE";
-    if (riskScore === "HIGH") return "CRITICAL";
-    return "UNKNOWN";
-  };
-
-  const getStatusColor = () => {
-    if (riskScore === "LOW") return "bg-green-100 text-green-700";
-    if (riskScore === "MEDIUM") return "bg-yellow-100 text-yellow-700";
-    if (riskScore === "HIGH") return "bg-red-100 text-red-700";
-    return "bg-gray-100 text-gray-700";
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <h3 className="text-sm font-medium text-gray-600">Portfolio Risk Score</h3>
-        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor()}`}>
-          {getHealthyStatus()}
-        </span>
-      </div>
-      <p className="text-3xl font-bold text-gray-900 mb-3">{riskScore}</p>
-      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-        <div className="h-full flex">
-          <div className={`h-full ${riskScore === "LOW" || riskScore === "MEDIUM" || riskScore === "HIGH" ? 'bg-green-500' : ''}`} style={{ width: '33%' }}></div>
-          <div className={`h-full ${riskScore === "MEDIUM" || riskScore === "HIGH" ? 'bg-yellow-500' : ''}`} style={{ width: '33%' }}></div>
-          <div className={`h-full ${riskScore === "HIGH" ? 'bg-red-500' : ''}`} style={{ width: '34%' }}></div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Get Risk Badge Color
-function getRiskColor(level) {
-  if (level === "LOW") return "bg-green-100 text-green-700";
-  if (level === "MEDIUM") return "bg-yellow-100 text-yellow-700";
-  if (level === "HIGH") return "bg-red-100 text-red-700";
-  return "bg-gray-100 text-gray-700";
-}
-
-// Main Provider Dashboard Component
+// ================= MAIN DASHBOARD =================
 function ProviderDashboard() {
+  const [firebaseClaims, setFirebaseClaims] = useState([]);
   const [summary, setSummary] = useState(null);
-  const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [activeSection, setActiveSection] = useState("overview");
+  const [processingClaim, setProcessingClaim] = useState(null);
+  
+  // Policy Management - UID Search States
+  const [searchUID, setSearchUID] = useState('');
+  const [patientData, setPatientData] = useState(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Fetch dashboard summary
-        const summaryResponse = await fetch(`${API_BASE}/api/provider/dashboard`);
-        if (!summaryResponse.ok) {
-          throw new Error('Failed to fetch dashboard data');
-        }
-        const summaryData = await summaryResponse.json();
-        setSummary(summaryData);
-
-        // Fetch claims
-        const claimsResponse = await fetch(`${API_BASE}/api/provider/claims`);
-        if (!claimsResponse.ok) {
-          throw new Error('Failed to fetch claims data');
-        }
-        const claimsData = await claimsResponse.json();
-        setClaims(claimsData);
-
-        setLoading(false);
-      } catch (err) {
-        // Use dummy data when API is not available
-        console.log('API not available, using dummy data');
-        setSummary({
-          claimsUnderReview: 1284,
-          pendingDecisions: 85,
-          avgApprovalDays: 4.2,
-          portfolioRiskScore: "LOW"
-        });
-        
-        setClaims([
-          {
-            claimId: "CLM-9021",
-            hospital: "St. Mary's Medical",
-            policyType: "Life Insurance",
-            amount: 12500,
-            riskLevel: "HIGH"
-          },
-          {
-            claimId: "CLM-8842",
-            hospital: "City General",
-            policyType: "Health Plus",
-            amount: 4200,
-            riskLevel: "LOW"
-          },
-          {
-            claimId: "CLM-8765",
-            hospital: "Unity Hospital",
-            policyType: "Family Cover",
-            amount: 8900,
-            riskLevel: "MEDIUM"
-          },
-          {
-            claimId: "CLM-8541",
-            hospital: "Grace Clinic",
-            policyType: "Corporate",
-            amount: 15000,
-            riskLevel: "HIGH"
-          },
-          {
-            claimId: "CLM-8320",
-            hospital: "Valley Health",
-            policyType: "Basic Life",
-            amount: 2100,
-            riskLevel: "LOW"
-          }
-        ]);
-        
-        setLoading(false);
-        setError(null);
-      }
+  // Status Badge Component
+  const StatusBadge = ({ status }) => {
+    const statusConfig = {
+      'Pending': { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending' },
+      'Under Review': { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Under Review' },
+      'Approved': { bg: 'bg-green-100', text: 'text-green-800', label: 'Approved' },
+      'Rejected': { bg: 'bg-red-100', text: 'text-red-800', label: 'Rejected' }
     };
 
-    fetchData();
+    const config = statusConfig[status] || { bg: 'bg-gray-100', text: 'text-gray-800', label: status };
+
+    return (
+      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${config.bg} ${config.text}`}>
+        {config.label}
+      </span>
+    );
+  };
+
+  // 🔥 REAL-TIME FIREBASE SUBSCRIPTION
+  useEffect(() => {
+    const unsubscribe = subscribeToRealTimeClaims((updatedClaims) => {
+      setFirebaseClaims(updatedClaims);
+
+      const pendingCount = updatedClaims.filter(
+        (c) => c.status === "Pending"
+      ).length;
+
+      const underReviewCount = updatedClaims.filter(
+        (c) => c.status === "Under Review"
+      ).length;
+
+      const portfolioRiskScore =
+        updatedClaims.some((c) => c.riskLevel === "HIGH_RISK")
+          ? "HIGH"
+          : "LOW";
+
+      // Calculate average approval days from approved claims
+      const approvedClaims = updatedClaims.filter(
+        (c) => c.status === "Approved" && c.createdAt && c.updatedAt
+      );
+      
+      let avgApprovalDays = 0;
+      if (approvedClaims.length > 0) {
+        const totalDays = approvedClaims.reduce((sum, claim) => {
+          const createdDate = new Date(claim.createdAt);
+          const updatedDate = new Date(claim.updatedAt);
+          const diffTime = Math.abs(updatedDate - createdDate);
+          const diffDays = diffTime / (1000 * 60 * 60 * 24); // Convert milliseconds to days
+          return sum + diffDays;
+        }, 0);
+        avgApprovalDays = (totalDays / approvedClaims.length).toFixed(1);
+      }
+
+      setSummary({
+        claimsUnderReview: underReviewCount,
+        pendingDecisions: pendingCount,
+        avgApprovalDays: avgApprovalDays,
+        portfolioRiskScore,
+      });
+
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // Helper function to add hospital subtitle
-  const getHospitalSubtitle = (hospital) => {
-    const subtitles = {
-      "St. Mary's Medical": "London Regional",
-      "City General": "Main Campus",
-      "Unity Hospital": "Community Center",
-      "Grace Clinic": "Private Sector",
-      "Valley Health": "County Center"
-    };
-    return subtitles[hospital] || "Medical Center";
+  // ================= CLAIM ACTIONS =================
+  const handleApproveClaim = async (claimId) => {
+    setProcessingClaim(claimId);
+    await approveClaim(claimId);
+    setProcessingClaim(null);
+  };
+
+  const handleRejectClaim = async (claimId) => {
+    const reason = window.prompt("Rejection reason (optional):");
+    if (reason === null) return;
+
+    setProcessingClaim(claimId);
+    await rejectClaim(claimId, reason);
+    setProcessingClaim(null);
+  };
+
+  const handleMarkUnderReview = async (claimId) => {
+    setProcessingClaim(claimId);
+    await markClaimUnderReview(claimId);
+    setProcessingClaim(null);
+  };
+
+  // ================= UID SEARCH HANDLER =================
+  const handleUIDSearch = async (e) => {
+    e.preventDefault();
+    
+    if (!searchUID.trim()) {
+      alert('Please enter a Patient UID');
+      return;
+    }
+
+    setSearchLoading(true);
+    setNotFound(false);
+    setPatientData(null);
+
+    try {
+      const response = await fetch('/insurance_dataset_uid_based_dates.csv');
+      const csvText = await response.text();
+      
+      // Parse CSV
+      const lines = csvText.split('\n');
+      
+      // Find patient with matching UID
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line.trim()) continue;
+        
+        // Handle quoted fields properly
+        const values = line.match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g)?.map(v => v.replace(/^"|"$/g, '').trim());
+        
+        if (values && values[0] === searchUID.trim()) {
+          // Found matching patient
+          const patient = {
+            uid: values[0],
+            name: values[1],
+            age: values[2],
+            gender: values[3],
+            phone: values[4],
+            email: values[5],
+            address: values[6],
+            policyType: values[7],
+            coverage: values[8],
+            premium: values[9],
+            authorizedDiseases: values[10],
+            dateOfInsuranceIssued: values[11]
+          };
+          
+          setPatientData(patient);
+          setSearchLoading(false);
+          return;
+        }
+      }
+      
+      // UID not found
+      setNotFound(true);
+      setSearchLoading(false);
+    } catch (error) {
+      console.error('Error fetching patient data:', error);
+      alert('Error loading patient records. Please try again.');
+      setSearchLoading(false);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchUID('');
+    setPatientData(null);
+    setNotFound(false);
   };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar />
+      <Sidebar
+        activeSection={activeSection}
+        setActiveSection={setActiveSection}
+      />
 
-      {/* Main Content */}
       <main className="ml-64 flex-1">
-        {/* Header */}
         <DashboardHeader />
 
-        {/* Content Area */}
         <div className="p-8">
-          {/* Loading State */}
-          {loading && (
-            <div className="flex items-center justify-center h-64">
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-gray-600">Loading dashboard...</p>
+
+          {/* ================= OVERVIEW ================= */}
+          {!loading && activeSection === "overview" && summary && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <KpiCard
+                  title="Claims Under Review"
+                  value={summary.claimsUnderReview}
+                  color="text-blue-600"
+                />
+                <KpiCard
+                  title="Pending Decisions"
+                  value={summary.pendingDecisions}
+                  color="text-orange-600"
+                />
+                <KpiCard
+                  title="Avg Approval Days"
+                  value={summary.avgApprovalDays}
+                  color="text-green-600"
+                />
+                <KpiCard
+                  title="Portfolio Risk"
+                  value={summary.portfolioRiskScore}
+                  color={
+                    summary.portfolioRiskScore === "LOW"
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }
+                />
               </div>
+
+              {/* Recent Claims */}
+              <div className="bg-white rounded-xl shadow p-6">
+                <h3 className="text-xl font-bold mb-4">
+                  Recent Claims
+                </h3>
+
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Policy ID</th>
+                      <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Hospital</th>
+                      <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Amount</th>
+                      <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Status</th>
+                      <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Risk</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {firebaseClaims.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="text-center py-8 text-gray-500">
+                          <p className="text-lg">No claims available</p>
+                          <p className="text-sm text-gray-400 mt-1">Claims will appear here when hospitals submit them</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      firebaseClaims.slice(0, 5).map((claim) => (
+                        <tr key={claim.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3 text-sm font-mono text-gray-600">{claim.policyId}</td>
+                          <td className="px-4 py-3 text-sm">{claim.hospitalName}</td>
+                          <td className="px-4 py-3 text-sm font-semibold">
+                            ₹{claim.amount?.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-3">
+                            <StatusBadge status={claim.status} />
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {claim.riskLevel || <span className="text-gray-400">Not analyzed</span>}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          {/* ================= CLAIM QUEUE ================= */}
+          {activeSection === "claim-queue" && (
+            <div className="bg-white rounded-xl shadow p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold">Real-Time Claim Queue</h3>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-gray-600">Live</span>
+                </div>
+              </div>
+
+              {firebaseClaims.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 text-lg mb-2">No claims in the queue</p>
+                  <p className="text-gray-400 text-sm">Claims will appear here in real-time when hospitals submit them</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {firebaseClaims.map((claim) => (
+                    <div
+                      key={claim.id}
+                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="font-semibold text-lg text-gray-900">{claim.patientName}</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {claim.policyId} | {claim.hospitalName}
+                          </p>
+                          {claim.diagnosis && (
+                            <p className="text-sm text-gray-600 mt-2">
+                              <span className="font-medium">Diagnosis:</span> {claim.diagnosis}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col items-end gap-3">
+                          <div className="text-right">
+                            <p className="text-sm text-gray-500">Claim Amount</p>
+                            <p className="text-xl font-bold text-gray-900">
+                              ₹{claim.amount?.toLocaleString()}
+                            </p>
+                          </div>
+
+                          <StatusBadge status={claim.status} />
+                        </div>
+                      </div>
+
+                      {claim.status === "Pending" && (
+                        <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+                          <button
+                            onClick={() => handleMarkUnderReview(claim.id)}
+                            disabled={processingClaim === claim.id}
+                            className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Mark Under Review
+                          </button>
+
+                          <button
+                            onClick={() => handleApproveClaim(claim.id)}
+                            disabled={processingClaim === claim.id}
+                            className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Approve
+                          </button>
+
+                          <button
+                            onClick={() => handleRejectClaim(claim.id)}
+                            disabled={processingClaim === claim.id}
+                            className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
+
+                      {claim.status === "Under Review" && (
+                        <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+                          <button
+                            onClick={() => handleApproveClaim(claim.id)}
+                            disabled={processingClaim === claim.id}
+                            className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Approve
+                          </button>
+
+                          <button
+                            onClick={() => handleRejectClaim(claim.id)}
+                            disabled={processingClaim === claim.id}
+                            className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Dashboard Content */}
-          {!loading && summary && (
-            <>
-              {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <StatsCard
-                  title="Claims Under Review"
-                  value={summary.claimsUnderReview.toLocaleString()}
-                  trend="+12% from last month"
-                  icon={
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  }
-                  iconBg="bg-blue-100"
-                />
-                <StatsCard
-                  title="Pending Decisions"
-                  value={summary.pendingDecisions.toLocaleString()}
-                  trend="-5% from last week"
-                  icon={
-                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  }
-                  iconBg="bg-orange-100"
-                />
-                <StatsCard
-                  title="Avg. Approval Time"
-                  value={`${summary.avgApprovalDays} Days`}
-                  trend="-1.5% improvement"
-                  icon={
-                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  }
-                  iconBg="bg-purple-100"
-                />
-                <RiskScoreCard riskScore={summary.portfolioRiskScore} />
+          {/* ================= POLICY MANAGEMENT ================= */}
+          {activeSection === "policy-management" && (
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg p-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <h1 className="text-3xl font-bold text-white">Policy Management</h1>
+                </div>
+                <p className="text-blue-100">Search and manage patient insurance policies by Patient UID</p>
               </div>
 
-              {/* Claims Adjudication Queue Section */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
-                {/* Section Header */}
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900">
-                        Claims Adjudication Queue
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Manage and process high-priority insurance claims
-                      </p>
-                    </div>
-                    <div className="flex gap-3">
-                      <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                        </svg>
-                        Filters
+              {/* Search Section */}
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-6">Search Patient Policy</h2>
+                
+                <form onSubmit={handleUIDSearch} className="space-y-4">
+                  <div>
+                    <label htmlFor="search-uid" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Patient UID
+                    </label>
+                    <div className="flex gap-4">
+                      <input
+                        id="search-uid"
+                        type="text"
+                        value={searchUID}
+                        onChange={(e) => setSearchUID(e.target.value)}
+                        placeholder="Enter Patient UID (e.g., ACK210001)"
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                        autoComplete="off"
+                      />
+                      <button
+                        type="submit"
+                        disabled={searchLoading}
+                        className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {searchLoading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                            Searching...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            Search
+                          </>
+                        )}
                       </button>
-                      <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Export CSV
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Claims Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Claim ID
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Hospital Provider
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Policy Type
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Amount
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Risk Level
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Action
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-100">
-                      {claims.length === 0 ? (
-                        <tr>
-                          <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
-                            No claims found
-                          </td>
-                        </tr>
-                      ) : (
-                        claims.map((claim) => (
-                          <tr
-                            key={claim.claimId}
-                            className="hover:bg-gray-50 transition"
-                          >
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="font-semibold text-blue-600">
-                                #{claim.claimId}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div>
-                                <div className="font-medium text-gray-900">{claim.hospital}</div>
-                                <div className="text-sm text-gray-500">{getHospitalSubtitle(claim.hospital)}</div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                              {claim.policyType}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap font-semibold text-gray-900">
-                              {claim.amount.toLocaleString("en-US", {
-                                style: "currency",
-                                currency: "USD",
-                              })}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span
-                                className={`px-3 py-1 rounded-full text-xs font-semibold ${getRiskColor(
-                                  claim.riskLevel
-                                )}`}
-                              >
-                                ● {claim.riskLevel}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                                Review Details
-                              </button>
-                            </td>
-                          </tr>
-                        ))
+                      {(patientData || notFound) && (
+                        <button
+                          type="button"
+                          onClick={handleClearSearch}
+                          className="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                        >
+                          Clear
+                        </button>
                       )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Pagination */}
-                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
-                    Showing 1-{Math.min(5, claims.length)} of {summary.claimsUnderReview.toLocaleString()} results
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-50 transition">
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white text-sm font-medium">
-                      1
-                    </button>
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-300 text-gray-700 text-sm hover:bg-gray-50 transition">
-                      2
-                    </button>
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-300 text-gray-700 text-sm hover:bg-gray-50 transition">
-                      3
-                    </button>
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-50 transition">
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
+                  <p className="text-sm text-gray-500">
+                    💡 Try sample UIDs: ACK210001, DIG220001, HDF230001, PMJ260001, ECH260001
+                  </p>
+                </form>
               </div>
 
-              {/* Bottom Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Priority Processing Banner */}
-                <div className="lg:col-span-2 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-white">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-bold mb-2">Priority Processing Active</h3>
-                      <p className="text-blue-100 text-sm">High-value claims are being processed with expedited review</p>
-                    </div>
-                    <svg className="w-12 h-12 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
+              {/* Not Found Message */}
+              {notFound && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
+                  <svg className="w-16 h-16 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h3 className="text-xl font-bold text-red-800 mb-2">Patient Not Found</h3>
+                  <p className="text-red-600">No patient record found with UID: <span className="font-mono font-semibold">{searchUID}</span></p>
+                  <p className="text-sm text-red-500 mt-2">Please check the UID and try again</p>
                 </div>
+              )}
 
-                {/* System Status */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">System Status</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Claims Engine</span>
-                      <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded">Online</span>
+              {/* Patient Data Display */}
+              {patientData && (
+                <div className="space-y-6">
+                  {/* Patient Information Card */}
+                  <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6">
+                      <h2 className="text-2xl font-bold text-white mb-2">{patientData.name}</h2>
+                      <p className="text-blue-100">Patient ID: <span className="font-mono font-semibold">{patientData.uid}</span></p>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">API Gateway</span>
-                      <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded">Online</span>
+                    
+                    <div className="p-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Personal Information */}
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 pb-2 border-b-2 border-blue-600">
+                            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Personal Information
+                          </h3>
+                          
+                          <div className="space-y-4">
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                              <label className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Name</label>
+                              <p className="text-gray-900 text-lg font-medium mt-1">{patientData.name}</p>
+                            </div>
+                            
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                              <label className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Age</label>
+                              <p className="text-gray-900 text-lg font-medium mt-1">{patientData.age} years</p>
+                            </div>
+                            
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                              <label className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Gender</label>
+                              <p className="text-gray-900 text-lg font-medium mt-1">{patientData.gender}</p>
+                            </div>
+                            
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                              <label className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Phone</label>
+                              <p className="text-gray-900 text-lg font-mono mt-1">{patientData.phone}</p>
+                            </div>
+                            
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                              <label className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Email</label>
+                              <p className="text-gray-900 break-all mt-1">{patientData.email}</p>
+                            </div>
+                            
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                              <label className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Address</label>
+                              <p className="text-gray-900 mt-1">{patientData.address}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Insurance Information */}
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 pb-2 border-b-2 border-green-600">
+                            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                            Insurance Information
+                          </h3>
+                          
+                          <div className="space-y-4">
+                            <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-600">
+                              <label className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Policy Type</label>
+                              <p className="text-gray-900 text-lg font-bold mt-1">{patientData.policyType}</p>
+                            </div>
+                            
+                            <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-600">
+                              <label className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Coverage Amount</label>
+                              <p className="text-green-600 text-2xl font-bold mt-1">₹{parseInt(patientData.coverage).toLocaleString()}</p>
+                            </div>
+                            
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                              <label className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Annual Premium</label>
+                              <p className="text-gray-900 text-lg font-medium mt-1">₹{parseInt(patientData.premium).toLocaleString()}</p>
+                            </div>
+                            
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                              <label className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Insurance Issued Date</label>
+                              <p className="text-gray-900 font-medium mt-1">{new Date(patientData.dateOfInsuranceIssued).toLocaleDateString('en-IN', { 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric' 
+                              })}</p>
+                            </div>
+                            
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                              <div className="flex items-center gap-2 mb-2">
+                                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                </svg>
+                                <label className="text-sm font-semibold text-blue-800 uppercase tracking-wider">Policy Status</label>
+                              </div>
+                              <p className="text-blue-900 font-bold text-lg">Active & Valid</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Database</span>
-                      <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded">Online</span>
+                  </div>
+
+                  {/* Authorized Diseases Card */}
+                  <div className="bg-white rounded-xl shadow-lg p-8">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 pb-3 border-b-2 border-purple-600">
+                      <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                      </svg>
+                      Authorized Diseases & Treatments
+                    </h3>
+                    
+                    <p className="text-sm text-gray-600 mb-4">The following medical conditions and treatments are covered under this policy:</p>
+                    
+                    <div className="flex flex-wrap gap-3">
+                      {patientData.authorizedDiseases.split(';').map((disease, index) => (
+                        <span 
+                          key={index}
+                          className="px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-semibold border border-purple-200 flex items-center gap-2"
+                        >
+                          <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          {disease.trim()}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 </div>
-              </div>
-            </>
+              )}
+            </div>
+          )}
+
+          {/* ================= RISK ANALYTICS ================= */}
+          {activeSection === "risk-analytics" && (
+            <RiskAnalytics />
           )}
         </div>
       </main>

@@ -5,7 +5,7 @@ DB_CONFIG = {
     "host": "localhost",
     "database": "insurancedb",
     "user": "postgres",
-    "password": "your_password_here",
+    "password": "shreyuu",
     "port": 5432
 }
 
